@@ -3,12 +3,8 @@ let currentPage = 1;
 
 function showList(page = 1) {
     currentPage = page;
-
     fetch(`${API}/songs?page=${page}`)
-        .then(res => {
-            if (!res.ok) throw new Error("Failed to fetch songs");
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             const content = document.getElementById("content");
             content.innerHTML = "";
@@ -19,7 +15,7 @@ function showList(page = 1) {
                 div.innerHTML = `
                     <strong>${song.title}</strong><br>
                     Album: ${song.album}<br>
-                    Rating: ${song.rating}<br>
+                    Rating: ${song.rating !== null ? song.rating : "Not rated"}<br>
                     <button onclick="editSong(${song.id})">Edit</button>
                     <button onclick="deleteSong(${song.id})">Delete</button>
                 `;
@@ -33,11 +29,6 @@ function showList(page = 1) {
                 <button ${data.page === data.totalPages ? "disabled" : ""} onclick="showList(${data.page + 1})">Next</button>
             `;
             content.appendChild(paging);
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById("content").innerHTML =
-                "Backend is waking up... try refreshing in 30 seconds.";
         });
 }
 
@@ -45,9 +36,9 @@ function showAddForm() {
     const content = document.getElementById("content");
     content.innerHTML = `
         <h2>Add Song</h2>
-        <input id="title" placeholder="Title">
-        <input id="album" placeholder="Album">
-        <input id="rating" type="number" min="1" max="10" placeholder="Rating (1-10)">
+        <input id="title" placeholder="Title"><br><br>
+        <input id="album" placeholder="Album"><br><br>
+        <input id="rating" type="number" min="1" max="10" placeholder="Rating (1-10)"><br><br>
         <button onclick="addSong()">Submit</button>
     `;
 }
@@ -67,12 +58,12 @@ function addSong() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, album, rating })
     })
-        .then(res => {
-            if (!res.ok) throw new Error("Invalid data");
-            return res.json();
-        })
-        .then(() => showList(currentPage))
-        .catch(() => alert("Server validation failed."));
+    .then(res => {
+        if (!res.ok) throw new Error("Invalid data");
+        return res.json();
+    })
+    .then(() => showList(currentPage))
+    .catch(() => alert("Server validation failed."));
 }
 
 function deleteSong(id) {
@@ -93,9 +84,9 @@ function editSong(id) {
             const content = document.getElementById("content");
             content.innerHTML = `
                 <h2>Edit Song</h2>
-                <input id="title" value="${song.title}">
-                <input id="album" value="${song.album}">
-                <input id="rating" type="number" min="1" max="10" value="${song.rating}">
+                <input id="title" value="${song.title}"><br><br>
+                <input id="album" value="${song.album}"><br><br>
+                <input id="rating" type="number" min="1" max="10" value="${song.rating !== null ? song.rating : ''}"><br><br>
                 <button onclick="updateSong(${id})">Update</button>
             `;
         });
@@ -111,66 +102,24 @@ function updateSong(id) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, album, rating })
     })
-        .then(() => showList(currentPage));
+    .then(() => showList(currentPage));
 }
 
-function showStats() {
-    fetch(`${API}/stats`)
-        .then(res => res.json())
-        .then(data => {
-            const content = document.getElementById("content");
+// New: Show favorite album on button click
+document.getElementById("show-favorite-album-btn").addEventListener("click", async () => {
+    try {
+        const response = await fetch(`${API}/stats`);
+        if (!response.ok) throw new Error("Failed to fetch stats");
 
-            // Get favorite album (first in sorted object)
-            const albums = Object.entries(data.albumRankings);
-            const favoriteAlbum = albums.length > 0 ? albums[0] : null;
+        const data = await response.json();
 
-            let albumCards = "";
+        const favoriteAlbum = data.favorite_album || "No ratings available";
 
-            albums.forEach(([album, avg]) => {
-                albumCards += `
-                    <div class="album-card">
-                        <h4>${album}</h4>
-                        <p>Average Rating: ${avg}</p>
-                    </div>
-                `;
-            });
-
-            content.innerHTML = `
-                <div class="stats-container">
-                    <h2>📊 Your Statistics</h2>
-
-                    <div class="stats-summary">
-                        <div class="stat-box">
-                            <h3>Total Songs</h3>
-                            <p>${data.totalSongs}</p>
-                        </div>
-
-                        <div class="stat-box">
-                            <h3>Overall Average</h3>
-                            <p>${data.averageRating}</p>
-                        </div>
-                    </div>
-
-                    ${
-                        favoriteAlbum
-                        ? `
-                        <div class="favorite-album">
-                            🏆 Favorite Album:
-                            <strong>${favoriteAlbum[0]}</strong>
-                            <span>(${favoriteAlbum[1]} avg)</span>
-                        </div>
-                        `
-                        : "<p>No ratings yet.</p>"
-                    }
-
-                    <h3>Album Rankings</h3>
-                    <div class="album-grid">
-                        ${albumCards}
-                    </div>
-                </div>
-            `;
-        });
-}
-
+        document.getElementById("favorite-album-result").textContent = `Your favorite album is: ${favoriteAlbum}`;
+    } catch (error) {
+        document.getElementById("favorite-album-result").textContent = "Error loading favorite album.";
+        console.error(error);
+    }
+});
 
 showList();
