@@ -6,8 +6,8 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(BASE_DIR, "data", "songs.json")
+DATA_FILE = "data/songs.json"
+
 
 def load_songs():
     with open(DATA_FILE, "r") as f:
@@ -18,9 +18,6 @@ def save_songs(songs):
     with open(DATA_FILE, "w") as f:
         json.dump(songs, f, indent=4)
 
-@app.route("/")
-def home():
-    return "Taylor API is running!"
 
 @app.route("/api/songs", methods=["GET"])
 def get_songs():
@@ -57,7 +54,7 @@ def add_song():
     except:
         return jsonify({"error": "Rating must be 1-10"}), 400
 
-    new_id = max(song["id"] for song in songs) + 1
+    new_id = max(song["id"] for song in songs) + 1 if songs else 1
     new_song = {
         "id": new_id,
         "title": data["title"],
@@ -80,7 +77,10 @@ def update_song(song_id):
         if song["id"] == song_id:
             song["title"] = data["title"]
             song["album"] = data["album"]
-            song["rating"] = int(data["rating"])
+            try:
+                song["rating"] = int(data["rating"])
+            except:
+                song["rating"] = None
             save_songs(songs)
             return jsonify(song)
 
@@ -94,43 +94,29 @@ def delete_song(song_id):
     save_songs(songs)
     return jsonify({"message": "Deleted"})
 
+
 @app.route("/api/stats", methods=["GET"])
 def stats():
     songs = load_songs()
+    rated_songs = [song for song in songs if song["rating"] is not None]
 
-    # Filter out songs with invalid or missing ratings
-    rated_songs = [song for song in songs if isinstance(song.get("rating"), int)]
-
-    total = len(rated_songs)
-
-    if total == 0:
-        return jsonify({
-            "totalSongs": 0,
-            "averageRating": 0,
-            "albumRankings": {}
-        })
-
-    avg_rating = round(sum(song["rating"] for song in rated_songs) / total, 2)
+    if not rated_songs:
+        return jsonify({"favorite_album": None})
 
     album_totals = {}
+    album_counts = {}
+
     for song in rated_songs:
         album = song["album"]
-        album_totals.setdefault(album, []).append(song["rating"])
+        rating = song["rating"]
+        album_totals[album] = album_totals.get(album, 0) + rating
+        album_counts[album] = album_counts.get(album, 0) + 1
 
-    album_averages = {
-        album: round(sum(ratings) / len(ratings), 2)
-        for album, ratings in album_totals.items()
-    }
+    album_averages = {album: album_totals[album] / album_counts[album] for album in album_totals}
 
-    sorted_albums = dict(
-        sorted(album_averages.items(), key=lambda x: x[1], reverse=True)
-    )
+    favorite_album = max(album_averages, key=album_averages.get)
 
-    return jsonify({
-        "totalSongs": total,
-        "averageRating": avg_rating,
-        "albumRankings": sorted_albums
-    })
+    return jsonify({"favorite_album": favorite_album})
 
 
 if __name__ == "__main__":
