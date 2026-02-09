@@ -29,6 +29,10 @@ function showList(page = 1) {
                 <button ${data.page === data.totalPages ? "disabled" : ""} onclick="showList(${data.page + 1})">Next</button>
             `;
             content.appendChild(paging);
+        })
+        .catch(err => {
+            alert("Failed to load songs.");
+            console.error(err);
         });
 }
 
@@ -71,7 +75,9 @@ function deleteSong(id) {
 
     fetch(`${API}/songs/${id}`, {
         method: "DELETE"
-    }).then(() => showList(currentPage));
+    })
+    .then(() => showList(currentPage))
+    .catch(() => alert("Failed to delete song."));
 }
 
 function editSong(id) {
@@ -79,7 +85,10 @@ function editSong(id) {
         .then(res => res.json())
         .then(data => {
             const song = data.songs.find(s => s.id === id);
-            if (!song) return;
+            if (!song) {
+                alert("Song not found.");
+                return;
+            }
 
             const content = document.getElementById("content");
             content.innerHTML = `
@@ -89,7 +98,8 @@ function editSong(id) {
                 <input id="rating" type="number" min="1" max="10" value="${song.rating !== null ? song.rating : ''}"><br><br>
                 <button onclick="updateSong(${id})">Update</button>
             `;
-        });
+        })
+        .catch(() => alert("Failed to load song for editing."));
 }
 
 function updateSong(id) {
@@ -102,10 +112,17 @@ function updateSong(id) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, album, rating })
     })
-    .then(() => showList(currentPage));
+    .then(res => {
+        if (!res.ok) throw new Error("Update failed");
+        showList(currentPage);
+    })
+    .catch(err => {
+        alert("Failed to update song");
+        console.error(err);
+    });
 }
 
-// New: Show favorite album on button click
+// Show favorite album on button click
 document.getElementById("show-favorite-album-btn").addEventListener("click", async () => {
     try {
         const response = await fetch(`${API}/stats`);
