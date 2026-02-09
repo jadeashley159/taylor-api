@@ -6,8 +6,8 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-DATA_FILE = "data/songs.json"
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE_DIR, "data", "songs.json")
 
 def load_songs():
     with open(DATA_FILE, "r") as f:
