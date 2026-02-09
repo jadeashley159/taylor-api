@@ -94,12 +94,19 @@ def delete_song(song_id):
     save_songs(songs)
     return jsonify({"message": "Deleted"})
 
-
 @app.route("/api/stats", methods=["GET"])
 def stats():
     songs = load_songs()
 
     total = len(songs)
+
+    if total == 0:
+        return jsonify({
+            "totalSongs": 0,
+            "averageRating": 0,
+            "albumRankings": {}
+        })
+
     avg_rating = round(sum(song["rating"] for song in songs) / total, 2)
 
     album_totals = {}
@@ -112,7 +119,9 @@ def stats():
         for album, ratings in album_totals.items()
     }
 
-    sorted_albums = dict(sorted(album_averages.items(), key=lambda x: x[1], reverse=True))
+    sorted_albums = dict(
+        sorted(album_averages.items(), key=lambda x: x[1], reverse=True)
+    )
 
     return jsonify({
         "totalSongs": total,
