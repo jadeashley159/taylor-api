@@ -98,7 +98,10 @@ def delete_song(song_id):
 def stats():
     songs = load_songs()
 
-    total = len(songs)
+    # Only include songs that actually have a rating
+    rated_songs = [song for song in songs if isinstance(song.get("rating"), int)]
+
+    total = len(rated_songs)
 
     if total == 0:
         return jsonify({
@@ -107,15 +110,15 @@ def stats():
             "albumRankings": {}
         })
 
-    avg_rating = round(sum(song["rating"] for song in songs) / total, 2)
+    avg_rating = round(sum(song["rating"] for song in rated_songs) / total, 2)
 
     album_totals = {}
-    for song in songs:
+    for song in rated_songs:
         album = song["album"]
         album_totals.setdefault(album, []).append(song["rating"])
 
     album_averages = {
-        album: round(sum(ratings)/len(ratings), 2)
+        album: round(sum(ratings) / len(ratings), 2)
         for album, ratings in album_totals.items()
     }
 
