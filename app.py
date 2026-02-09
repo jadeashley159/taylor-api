@@ -98,7 +98,7 @@ def delete_song(song_id):
 def stats():
     songs = load_songs()
 
-    # Only include songs that actually have a rating
+    # Filter out songs with invalid or missing ratings
     rated_songs = [song for song in songs if isinstance(song.get("rating"), int)]
 
     total = len(rated_songs)
