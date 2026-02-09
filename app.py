@@ -18,6 +18,9 @@ def save_songs(songs):
     with open(DATA_FILE, "w") as f:
         json.dump(songs, f, indent=4)
 
+@app.route("/")
+def home():
+    return "Taylor API is running!"
 
 @app.route("/api/songs", methods=["GET"])
 def get_songs():
