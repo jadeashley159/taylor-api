@@ -98,26 +98,39 @@ def delete_song(song_id):
 @app.route("/api/stats", methods=["GET"])
 def stats():
     songs = load_songs()
+
+    # Filter out songs with None rating
     rated_songs = [song for song in songs if song["rating"] is not None]
 
     if not rated_songs:
-        return jsonify({"favorite_album": None})
+        # No rated songs, respond accordingly
+        return jsonify({
+            "totalSongs": len(songs),
+            "averageRating": None,
+            "favorite_album": None
+        })
+
+    total = len(rated_songs)
+    avg_rating = round(sum(song["rating"] for song in rated_songs) / total, 2)
 
     album_totals = {}
-    album_counts = {}
-
     for song in rated_songs:
         album = song["album"]
-        rating = song["rating"]
-        album_totals[album] = album_totals.get(album, 0) + rating
-        album_counts[album] = album_counts.get(album, 0) + 1
+        album_totals.setdefault(album, []).append(song["rating"])
 
-    album_averages = {album: album_totals[album] / album_counts[album] for album in album_totals}
+    album_averages = {
+        album: round(sum(ratings)/len(ratings), 2)
+        for album, ratings in album_totals.items()
+    }
 
+    # Get album with highest average rating
     favorite_album = max(album_averages, key=album_averages.get)
 
-    return jsonify({"favorite_album": favorite_album})
-
+    return jsonify({
+        "totalSongs": len(songs),
+        "averageRating": avg_rating,
+        "favorite_album": favorite_album
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
