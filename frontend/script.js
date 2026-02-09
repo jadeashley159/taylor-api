@@ -120,19 +120,57 @@ function showStats() {
         .then(data => {
             const content = document.getElementById("content");
 
-            let albumList = "";
-            for (let album in data.albumRankings) {
-                albumList += `<li>${album}: ${data.albumRankings[album]}</li>`;
-            }
+            // Get favorite album (first in sorted object)
+            const albums = Object.entries(data.albumRankings);
+            const favoriteAlbum = albums.length > 0 ? albums[0] : null;
+
+            let albumCards = "";
+
+            albums.forEach(([album, avg]) => {
+                albumCards += `
+                    <div class="album-card">
+                        <h4>${album}</h4>
+                        <p>Average Rating: ${avg}</p>
+                    </div>
+                `;
+            });
 
             content.innerHTML = `
-                <h2>Statistics</h2>
-                Total Songs: ${data.totalSongs}<br>
-                Average Rating: ${data.averageRating}<br>
-                <h3>Album Rankings (by Avg Rating)</h3>
-                <ul>${albumList}</ul>
+                <div class="stats-container">
+                    <h2>📊 Your Statistics</h2>
+
+                    <div class="stats-summary">
+                        <div class="stat-box">
+                            <h3>Total Songs</h3>
+                            <p>${data.totalSongs}</p>
+                        </div>
+
+                        <div class="stat-box">
+                            <h3>Overall Average</h3>
+                            <p>${data.averageRating}</p>
+                        </div>
+                    </div>
+
+                    ${
+                        favoriteAlbum
+                        ? `
+                        <div class="favorite-album">
+                            🏆 Favorite Album:
+                            <strong>${favoriteAlbum[0]}</strong>
+                            <span>(${favoriteAlbum[1]} avg)</span>
+                        </div>
+                        `
+                        : "<p>No ratings yet.</p>"
+                    }
+
+                    <h3>Album Rankings</h3>
+                    <div class="album-grid">
+                        ${albumCards}
+                    </div>
+                </div>
             `;
         });
 }
+
 
 showList();
