@@ -1,0 +1,37 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #fdf2f8;
+}
+
+h1 {
+    text-align: center;
+}
+
+nav {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 8px 12px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+.song-card {
+    background: white;
+    padding: 10px;
+    margin: 10px auto;
+    max-width: 500px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+input {
+    display: block;
+    margin: 8px 0;
+    padding: 6px;
+    width: 100%;
+    max-width: 400px;
+}
