@@ -1,4 +1,4 @@
-const API = "https://taylor-api-dftn.onrender.com/api/songs";
+const API = "https://taylor-api-dftn.onrender.com/api";
 let currentPage = 1;
 
 function showList(page = 1) {
