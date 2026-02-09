@@ -3,8 +3,12 @@ let currentPage = 1;
 
 function showList(page = 1) {
     currentPage = page;
+
     fetch(`${API}/songs?page=${page}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to fetch songs");
+            return res.json();
+        })
         .then(data => {
             const content = document.getElementById("content");
             content.innerHTML = "";
@@ -29,6 +33,11 @@ function showList(page = 1) {
                 <button ${data.page === data.totalPages ? "disabled" : ""} onclick="showList(${data.page + 1})">Next</button>
             `;
             content.appendChild(paging);
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById("content").innerHTML =
+                "Backend is waking up... try refreshing in 30 seconds.";
         });
 }
 
@@ -58,12 +67,12 @@ function addSong() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, album, rating })
     })
-    .then(res => {
-        if (!res.ok) throw new Error("Invalid data");
-        return res.json();
-    })
-    .then(() => showList(currentPage))
-    .catch(() => alert("Server validation failed."));
+        .then(res => {
+            if (!res.ok) throw new Error("Invalid data");
+            return res.json();
+        })
+        .then(() => showList(currentPage))
+        .catch(() => alert("Server validation failed."));
 }
 
 function deleteSong(id) {
@@ -102,7 +111,7 @@ function updateSong(id) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, album, rating })
     })
-    .then(() => showList(currentPage));
+        .then(() => showList(currentPage));
 }
 
 function showStats() {
